@@ -5,10 +5,11 @@ ini_set('display_errors', 1);
 require "connection.php";
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
-require './PHPMailer/src/PHPMailer.php';
-require './PHPMailer/src/SMTP.php';
+require '../php/PHPMailer/src/Exception.php';
+require '../php/PHPMailer/src/PHPMailer.php';
+require '../php/PHPMailer/src/SMTP.php';
 
 //include('admin-account.php');
 

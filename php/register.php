@@ -1,6 +1,8 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+require "connection.php";
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -9,8 +11,6 @@ require '../php/PHPMailer/src/Exception.php';
 require '../php/PHPMailer/src/PHPMailer.php';
 require '../php/PHPMailer/src/SMTP.php';
 
-// DB connection
-$conn = new mysqli("localhost", "root", "", "daily_grind");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
