@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
 if (isset($_POST["verify_email"])) {
     $email = $_POST["email"];
     $verification_code = $_POST["verification_code"];

@@ -30,7 +30,7 @@ if (isset($_POST["register"])) {
     $lname = $_POST['last_name'];
 
     // Check if the email is unique (not already in the database)
-    $conn = mysqli_connect("localhost:3306", "root", "", "vincere_de_floret");
+    $conn = mysqli_connect("localhost:3306", "root", "", "daily_grind");
 
     if (!isEmailUnique($conn, $email)) {
         echo "<script>alert('Email already exists. Please choose a different email.'); window.history.back();</script>";
@@ -90,7 +90,7 @@ if (isset($_POST["register"])) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>Registration</title>
     <link rel="icon" type="image/png" href="../assets/logo/logo2.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/register.css">
