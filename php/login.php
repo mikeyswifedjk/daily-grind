@@ -11,136 +11,122 @@ require '../php/PHPMailer/src/Exception.php';
 require '../php/PHPMailer/src/PHPMailer.php';
 require '../php/PHPMailer/src/SMTP.php';
 
-//include('admin-account.php');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
-// Check if the user is logged in
 if (isset($_SESSION['user_name'])) {
-    header("Location: http://localhost/vincere-de-floret/php/customer-dashboard.php?user=". $_SESSION['user_name']);
-} 
+    header("Location: http://localhost/daily-grind/php/customer-dashboard.php?user=" . $_SESSION['user_name']);
+    exit;
+}
 
-// Check if a form parameter named "login" has been submitted via the HTTP POST method.
 if (isset($_POST["login"])) {
     $identifier = $_POST["identifier"];
     $password = $_POST["password"];
-    // Define the default admin credentials
-    $default_admin_email = "admin@gmail.com";
-    $default_admin_password = "admin";
-    // Connect to the database
 
-    //Check if there is an existing email address of admin
+    // Admin check
     $stmt_admin = mysqli_prepare($conn, "SELECT * FROM admin WHERE email = ? OR username = ?");
     mysqli_stmt_bind_param($stmt_admin, "ss", $identifier, $identifier);
     mysqli_stmt_execute($stmt_admin);
     $result_admin = mysqli_stmt_get_result($stmt_admin);
 
-
-    // Check if credentials are okay, and email is verified
+    // User check
     $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email = ? OR name = ?");
     mysqli_stmt_bind_param($stmt, "ss", $identifier, $identifier);    
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
+    // Admin login flow
     if (mysqli_num_rows($result_admin) > 0) {
-        // Admin login
-        $user = mysqli_fetch_object($result_admin);
-        // Check if the password is incorrect
-        if (!password_verify($password, $user->password)) {
-            // Increment login attempts for admin
+        $admin = mysqli_fetch_assoc($result_admin);
+
+        if (!password_verify($password, $admin['password'])) {
             echo "<script>alert('Password is not correct for admin.'); window.history.back();</script>";
             exit;
         }
 
-        // Set session variables for the logged-in admin
         $_SESSION['user_type'] = 'admin';
-        $_SESSION['user_email'] = $email;
+        $_SESSION['user_email'] = $admin['email'];
         $_SESSION['admin_username'] = $admin['username'];
         $_SESSION['admin_fullname'] = $admin['fullname'];
+        $_SESSION['admin_email'] = $admin['email'];
 
-        // You may add further checks or actions for admin login if needed
-        header("Location: http://localhost/vincere-de-floret/php/admin-dashboard.php");
+        header("Location: http://localhost/daily-grind/php/admin-dashboard.php");
         exit;
 
-    } else if (mysqli_num_rows($result) > 0){
-        // Regular user login
-    $user = mysqli_fetch_object($result);
+    } elseif (mysqli_num_rows($result) > 0) {
+        $user = mysqli_fetch_assoc($result);
 
-    // Check if the user is blocked
-    if ($user->blocked == 1) {
-        echo "<script>alert('Your account is blocked. Contact the admin for assistance.'); window.history.back();</script>";
-        exit;
-    }
-
-    // Check if the password is incorrect
-    if (!password_verify($password, $user->password)) {
-        $email = $user->email;
-        // Increment login attempts for regular user
-        recordLoginAttempt($conn, $email);
-
-        // Get the current login attempts
-        $loginAttempts = getLoginAttempts($conn, $email);
-
-        // Check if the user has reached the maximum attempts
-        $maxAttempts = 3; // Adjust this value as needed
-
-        if ($loginAttempts >= $maxAttempts) {
-            // Block the user
-            $blockSql = "UPDATE users SET blocked = 1 WHERE email = '$email'";
-            mysqli_query($conn, $blockSql);
-
+        if ($user['blocked'] == 1) {
             echo "<script>alert('Your account is blocked. Contact the admin for assistance.'); window.history.back();</script>";
             exit;
         }
 
-        echo "<script>alert('Password is not correct.'); window.history.back();</script>";
+        if (!password_verify($password, $user['password'])) {
+            $email = $user['email'];
+            recordLoginAttempt($conn, $email);
+            $loginAttempts = getLoginAttempts($conn, $email);
+            $maxAttempts = 3;
+
+            if ($loginAttempts >= $maxAttempts) {
+                $blockSql = "UPDATE users SET blocked = 1 WHERE email = '$email'";
+                mysqli_query($conn, $blockSql);
+
+                echo "<script>alert('Your account is blocked. Contact the admin for assistance.'); window.history.back();</script>";
+                exit;
+            }
+
+            echo "<script>alert('Password is not correct.'); window.history.back();</script>";
+            exit;
+        }
+
+        // ✅ Successful login: Reset attempts
+        resetLoginAttempts($conn, $user['email']);
+
+        $_SESSION['user_type'] = 'customer';
+        $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_email'] = $user['email'];
+
+        header("Location: http://localhost/daily-grind/php/customer-dashboard.php");
         exit;
-    }
 
-    // Regular user is logged in, redirect to customer landing page
-    $_SESSION['user_type'] = 'customer';
-    $_SESSION['user_name'] = $user->name;
-    $_SESSION['user_email'] = $email;
-
-    // Regular user is logged in, redirect to customer landing page
-    header("Location: http://localhost/vincere-de-floret/php/customer-dashboard.php");
-    exit;
     } else {
-        // Email not found
-        echo "<script>alert('Email not found.'); window.history.back();</script>";
+        echo "<script>alert('Email or username not found.'); window.history.back();</script>";
         exit;
     }
 }
-    function recordLoginAttempt($conn, $email){
-        // Check if there is a record for the user in the login_attempts table
-        $sql = "SELECT * FROM users WHERE email = '" . $email . "'";
-        $result = mysqli_query($conn, $sql);
-        if (!$result) {
-            echo "<script>alert('SQL error: " . mysqli_error($conn) . "');</script>";  // Debugging output for query errors
-        }
-        if (mysqli_num_rows($result) == 0) {
-            // Insert a new record if it doesn't exist
-            $insertSql = "INSERT INTO users (email, attempts) VALUES ('$email', 1)";
-            mysqli_query($conn, $insertSql);
-        } else {
-            // Update the existing record
-            $updateSql = "UPDATE users SET attempts = attempts + 1 WHERE email = '$email'";
-            mysqli_query($conn, $updateSql);
-        }
-    }
 
-    function getLoginAttempts($conn, $email){
-        $sql = "SELECT attempts FROM users WHERE email = '" . $email . "'";
-        $result = mysqli_query($conn, $sql);
-        if (!$result) {
-            echo "<script>alert('SQL error: " . mysqli_error($conn) . "');</script>"; // Debugging output for query errors
-        }
+// Record a failed login attempt
+function recordLoginAttempt($conn, $email){
+    $email = mysqli_real_escape_string($conn, $email);
+    $checkSql = "SELECT * FROM users WHERE email = '$email'";
+    $result = mysqli_query($conn, $checkSql);
 
-        if ($result && mysqli_num_rows($result) > 0) {
-            $row = mysqli_fetch_assoc($result);
-            return $row['attempts'];
-        } else {
-            return 0; // Return 0 if there are no login attempts
-        }
+    if ($result && mysqli_num_rows($result) > 0) {
+        $updateSql = "UPDATE users SET attempts = attempts + 1 WHERE email = '$email'";
+        mysqli_query($conn, $updateSql);
     }
+}
+
+// Get number of attempts
+function getLoginAttempts($conn, $email){
+    $email = mysqli_real_escape_string($conn, $email);
+    $sql = "SELECT attempts FROM users WHERE email = '$email'";
+    $result = mysqli_query($conn, $sql);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        return (int)$row['attempts'];
+    }
+    return 0;
+}
+
+// ✅ Reset attempts on successful login
+function resetLoginAttempts($conn, $email){
+    $email = mysqli_real_escape_string($conn, $email);
+    $sql = "UPDATE users SET attempts = 0 WHERE email = '$email'";
+    mysqli_query($conn, $sql);
+}
 ?>
 
 <!DOCTYPE html>
@@ -160,7 +146,7 @@ if (isset($_POST["login"])) {
         <form method="POST">
             <input type="text" name="identifier" placeholder="Email or Username" required />
             <input type="password" name="password" placeholder="Password" required />
-            <p class="forget"><a href="forgotpassword.php">Forgot Password?</a></p>
+            <p class="forget"><a href="forgot-password.php">Forgot Password?</a></p>
             <input type="submit" name="login" value="Login">
             <p class="signup">Don't have an account? <a href="register.php">Register</a></p>
         </form>

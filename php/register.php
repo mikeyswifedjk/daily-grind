@@ -33,7 +33,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
     $fname        = $_POST["first_name"];
     $mname        = $_POST["middle_name"];
     $lname        = $_POST["last_name"];
-    $image        = '';
 
     if (!isEmailUnique($conn, $email)) {
         echo "<script>alert('Email already exists. Please choose a different email.'); window.history.back();</script>";
@@ -54,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'shopbee800@gmail.com';
-        $mail->Password   = 'fqjhitqjtddbxqvz'; // Consider securing with env variable
+        $mail->Password   = 'fqjhitqjtddbxqvz';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
@@ -79,13 +78,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
         $mail->send();
 
         $stmt = $conn->prepare("
-            INSERT INTO users (name, email, password, verification_code, email_verified_at, attempts, contact_number, address, first_name, middle_name, last_name, image_path)
-            VALUES (?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (name, email, password, verification_code, email_verified_at, attempts, contact_number, address, first_name, middle_name, last_name)
+            VALUES (?, ?, ?, ?, NULL, 0, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("sssssssssss", $name, $email, $hashed_password, $verification_code, $phone, $address, $fname, $mname, $lname, $image);
+
+        $stmt->bind_param("sssssssss", $name, $email, $hashed_password, $verification_code, $phone, $address, $fname, $mname, $lname);
         $stmt->execute();
 
-        header("Location: http://localhost/vincere-de-floret/php/email-verification.php?email=" . urlencode($email));
+        header("Location: http://localhost/daily-grind/php/email-verification.php?email=" . urlencode($email));
         exit;
     } catch (Exception $e) {
         echo "Email could not be sent. Mailer Error: {$mail->ErrorInfo}";
@@ -133,11 +133,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["register"])) {
       </div>
 
       <input type="submit" name="register" value="REGISTER" />
-
-      <p class="login">
-        Already have an account? <a href="login.php">Login</a>
-      </p>
     </form>
+    <p class="login">
+      Already have an account? <a href="login.php">Login</a>
+    </p>
   </div>
 
   <script>

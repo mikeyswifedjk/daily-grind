@@ -1,20 +1,18 @@
 <?php
+session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+require "connection.php";
 
 if (isset($_POST["verify_email"])) {
     $email = $_POST["email"];
     $verification_code = $_POST["verification_code"];
-    
-    // Connect with the database
-    $conn = mysqli_connect("localhost:3306", "root", "", "vincere_de_floret");
-    
-    // Check if the verification code is correct
+
     $sql = "SELECT * FROM users WHERE email = '$email' AND verification_code = '$verification_code'";
     $result = mysqli_query($conn, $sql);
     
     if ($result && mysqli_num_rows($result) > 0) {
-        // Correct verification code, proceed with database update
+
         $row = mysqli_fetch_assoc($result);
         if (isset($_GET['type'])) {
             $sql_update = "UPDATE users SET reset_token = '', reset_token_expiration = '' WHERE email = '$email' AND verification_code = '$verification_code'";
@@ -25,24 +23,22 @@ if (isset($_POST["verify_email"])) {
         $result_update = mysqli_query($conn, $sql_update);
         if ($result_update && mysqli_affected_rows($conn) > 0) {
             if (isset($_GET['type'])) {
-                header("Location: http://localhost/vincere-de-floret/php/updatepassword.php?email=$email");
-                exit(); // Ensure no further code execution after redirection
+                header("Location: http://localhost/daily-grind/php/update-password.php?email=$email");
+                exit();
             } else {
                 echo "<script>alert('Successfully Registered!'); document.location.href = 'login.php';</script>";
-                exit(); // Ensure no further code execution after displaying alert
+                exit();
             }
         } else {
             echo "<script>alert('Database error. Please try again later.'); window.history.back();</script>";
-            exit(); // Ensure no further code execution after displaying alert
+            exit();
         }
     } else {
-        // Incorrect verification code, show an alert to the user
         echo "<script>alert('Incorrect verification code. Please try again.'); window.history.back();</script>";
-        exit(); // Ensure no further code execution after displaying alert
+        exit();
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -50,7 +46,7 @@ if (isset($_POST["verify_email"])) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vincere De Floret</title>
+    <title>Email Verification</title>
     <link rel="icon" type="image/png" href="../assets/logo/logo2.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/email-verification.css">
@@ -63,7 +59,10 @@ if (isset($_POST["verify_email"])) {
             <input type="text" name="verification_code" placeholder="Enter verification code" required />
             <input type="submit" name="verify_email" value="Verify Email">
         </form>
-        <p class="try-again"> Didn't receive an email? <a href="#">Try Again</a></p>
+        <p class="try-again">
+            Didn't receive an email?
+            <a href="resend-code.php?email=<?php echo urlencode($_GET['email']); ?>&type=<?php echo isset($_GET['type']) ? $_GET['type'] : ''; ?>">Try Again</a>
+        </p>
     </div>
 </body>
 </html>

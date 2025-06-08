@@ -1,7 +1,8 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+session_start();
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require "connection.php";
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -15,8 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $email = $_POST['email'];
     $verification_code = substr(number_format(time() * rand(), 0, '', ''), 0, 6);
 
-    $conn = mysqli_connect("localhost:3306", "root", "", "vincere-de-floret");
-
     $update = mysqli_query($conn, "UPDATE users SET verification_code = '$verification_code' WHERE email = '$email'");
 
     if ($update) {
@@ -25,18 +24,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'vinceredefloret@gmail.com'; // your Gmail
-            $mail->Password = 'ossmyxegmiivobzm'; // your actual app password (remove spaces)
+            $mail->Username = 'shopbee800@gmail.com';
+            $mail->Password = 'fqjhitqjtddbxqvz';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
 
-            $mail->setFrom('vinceredefloret@gmail.com', 'Vincere De Floret');
+            $mail->setFrom('shopbee800@gmail.com', 'Daily Grind');
             $mail->addAddress($email);
 
             $mail->isHTML(true);
             $mail->Subject = 'Email Verification Code';
-            $mail->Body    = "<h3>Your Verification Code</h3><p>Please enter the following code to verify your account. This code is valid for 1 hour.</p><p>$verification_code</p><p>If you did not create an account, please ignore this email.</p>";
-
+            $mail->Body    = "<h3>Email Verification for Daily Grind Account</h3>
+            <p>Dear User,</p>
+            <p>Thank you for registering with Daily Grind! To ensure that your email address is valid, we just need you to verify it by entering the following code:</p>
+            <p style='font-size: 2em; font-weight: bold;'>$verification_code</p>
+            <p>This code is valid for 1 hour. If you did not request an account, please disregard this email.</p>
+            <p>Thank you for your cooperation!</p>
+            <p>Best regards,</p>
+            <p>The Daily Grind Team</p>";
+            
             $mail->send();
 
             header("Location: email-verification.php?email=" . urlencode($email));
