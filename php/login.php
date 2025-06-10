@@ -134,7 +134,7 @@ function resetLoginAttempts($conn, $email){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vincere De Floret</title>
+    <title>Login</title>
     <link rel="icon" type="image/png" href="../assets/logo/logo2.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/login.css">
